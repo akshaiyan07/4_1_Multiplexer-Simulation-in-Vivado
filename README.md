@@ -41,13 +41,12 @@ module mux4_gate (
     input  wire S0, S1,
     output wire Y
 );
-    // Declare internal wires
-
-    // Write NOT gates
-
-    // Write AND gates
-
-    // Write OR gate
+    wire w1, w2, w3, w4;
+    and g1(w1, I0, ~S0, ~S1);
+    and g2(w2, I1, ~S0,  S1);
+    and g3(w3, I2,  S0, ~S1);
+    and g4(w4, I3,  S0,  S1);
+    or g5(Y, w1, w2, w3, w4);
 
 endmodule
 
@@ -64,26 +63,34 @@ module tb_mux4_gate;
     wire Y;
 
     // Instantiate DUT
-    mux4_gate uut (
-        .I0(I0), .I1(I1), .I2(I2), .I3(I3),
-        .S0(S0), .S1(S1),
-        .Y(Y)
-    );
+    mux4_gate uut (.I(I), .S(S), .Y(Y));
 
     initial begin
-        // Initialize inputs
+        $monitor("Time=%0t | I0=%b I1=%b I2=%b I3=%b | S1S0=%b%b | Y=%b",
+                 $time, I0, I1, I2, I3, S1, S0, Y);
 
-        // Apply test cases
+        // First test case
+        I0=1; I1=0; I2=1; I3=0;
+        S0=0; S1=0; #10;
+        S0=1; S1=0; #10;
+        S0=0; S1=1; #10;
+        S0=1; S1=1; #10;
 
-        // Stop simulation
-        #10 $stop;
+        // Second test case
+        I0=0; I1=0; I2=1; I3=0;
+        S0=0; S1=0; #10;
+        S0=1; S1=0; #10;
+        S0=0; S1=1; #10;
+        S0=1; S1=1; #10;
+
+        $finish;
     end
-
 endmodule
 ```
 ## Simulated Output Gate Level Modelling
 
-_______ Here Paste the Simulated output  ___________
+<img width="1918" height="1079" alt="Screenshot 2025-09-17 201103" src="https://github.com/user-attachments/assets/bc2ad232-71b6-423b-87ce-81b743d262fb" />
+
 
 ---
 ### 4:1 MUX Data flow Modelling
@@ -94,10 +101,14 @@ module mux4_dataflow (
     input  wire S0, S1,
     output wire Y
 );
-    // Write assign statement using operators
+    wire [4:1] w;
+    assign w[1] = I0 & ~S1 & ~S0; 
+    assign w[2] = I1 & ~S1 &  S0; 
+    assign w[3] = I2 &  S1 & ~S0; 
+    assign w[4] = I3 &  S1 &  S0; 
 
+    assign Y = w[1] | w[2] | w[3] | w[4];
 endmodule
-
 ```
 ### 4:1 MUX Data flow Modelling- Testbench
 ```verilog
@@ -106,83 +117,95 @@ endmodule
 module tb_mux4_dataflow;
 
     // Declare testbench signals
-    reg I0, I1, I2, I3;
-    reg S0, S1;
+    reg [3:0] I;
+    reg [1:0] S;
     wire Y;
 
+
     // Instantiate DUT
-    mux4_dataflow uut (
-        .I0(I0), .I1(I1), .I2(I2), .I3(I3),
-        .S0(S0), .S1(S1),
-        .Y(Y)
-    );
-
+  mux4_dataflow  uut (.I(I), .S(S), .Y(Y));
     initial begin
-        // Initialize inputs
+        $monitor("Time=%0t | I=%b | S=%b | Y=%b", $time, I, S, Y);
 
-        // Apply test cases
+        I = 4'b1010;
+        S = 2'b00; #10;
+        S = 2'b01; #10;
+        S = 2'b10; #10;
+        S = 2'b11; #10;
 
-        // Stop simulation
-        #10 $stop;
+        I = 4'b0010;
+        S = 2'b00; #10;
+        S = 2'b01; #10;
+        S = 2'b10; #10;
+        S = 2'b11; #10;
+
+        $finish;
     end
-
 endmodule
 
 ```
 ## Simulated Output Dataflow Modelling
+<img width="1912" height="1077" alt="image" src="https://github.com/user-attachments/assets/fbb5b84b-5d53-4047-a293-b9512186890c" />
 
-_______ Here Paste the Simulated output  ___________
 
 ---
 ### 4:1 MUX Behavioral Implementation
 ```verilog
 module mux4_to_1_behavioral (
-    input wire A,
-    input wire B,
-    input wire C,
-    input wire D,
-    input wire S0,
-    input wire S1,
-    output reg Y
+    input  wire A, B, C, D,   
+    input  wire S0, S1,       
+    output reg  Y            
 );
     always @(*) begin
-        
+        case ({S1, S0})  
+            2'b00: Y = A;
+            2'b01: Y = B;
+            2'b10: Y = C;
+            2'b11: Y = D;
+            default: Y = 1'b0;  
+        endcase
     end
 endmodule
+
 ```
 ### 4:1 MUX Behavioral Modelling- Testbench
 ```verilog
 // Testbench Skeleton
 `timescale 1ns/1ps
-module tb_mux4_behavioral;
+module tb_mux4_dataflow;
 
     // Declare testbench signals
-    reg I0, I1, I2, I3;
-    reg S0, S1;
+    reg [3:0] I;
+    reg [1:0] S;
     wire Y;
 
+
     // Instantiate DUT
-    mux4_behavioral uut (
-        .I0(I0), .I1(I1), .I2(I2), .I3(I3),
-        .S0(S0), .S1(S1),
-        .Y(Y)
-    );
-
+  mux4_to_1_behavioral uut (.I(I), .S(S), .Y(Y));
     initial begin
-        // Initialize inputs
+        $monitor("Time=%0t | I=%b | S=%b | Y=%b", $time, I, S, Y);
 
-        // Apply test cases
+        I = 4'b1010;
+        S = 2'b00; #10;
+        S = 2'b01; #10;
+        S = 2'b10; #10;
+        S = 2'b11; #10;
 
-        // Stop simulation
-        #10 $stop;
+        I = 4'b0010;
+        S = 2'b00; #10;
+        S = 2'b01; #10;
+        S = 2'b10; #10;
+        S = 2'b11; #10;
+
+        $finish;
     end
-
 endmodule
 
 ```
 ## Simulated Output Behavioral Modelling
 
-_______ Here Paste the Simulated output  ___________
+<img width="1913" height="1078" alt="image" src="https://github.com/user-attachments/assets/ed9a8e2d-cf54-400c-825f-8ce8efe32f58" />
+
 
 
 ### 4:1 MUX Structural Implementation
@@ -191,54 +214,60 @@ _______ Here Paste the Simulated output  ___________
 
 
 ```verilog
-module mux2_to_1 (
-    input wire A,
-    input wire B,
-    input wire S,
-    output wire Y
-);
-    assign Y = S ? B : A;
+module MUX_2_1(a, b, s, z);
+input a, b, s;
+output z;
+wire ns, w1, w2;
+not g0(ns, s);
+and g1(w1, a, ns);
+and g2(w2, b, s);
+or  g3(z, w1, w2);
 endmodule
 
-module mux4_to_1_structural (
-    input wire A,
-    input wire B,
-    input wire C,
-    input wire D,
-    input wire S0,
-    input wire S1,
-    output wire Y
-);
-
-
-
-
+module MUX_4_1(I,S,Y);
+input [3:0] I;
+input [1:0] S;
+output Y;
+wire w1,w2;
+  MUX_2_1 m1(I[0], I[1], S[0], w1);  
+  MUX_2_1 m2(I[2], I[3], S[0], w2);  
+  MUX_2_1 m3(w1, w2, S[1], Y);
 endmodule
 ```
 ### Testbench Implementation
 ```verilog
 `timescale 1ns / 1ps
+module tb_mux4_dataflow;
 
-module mux4_to_1_tb;
-    reg A, B, C, D, S0, S1;
-    wire Y_gate, Y_dataflow, Y_behavioral, Y_structural;
+    reg [3:0] I;
+    reg [1:0] S;
+    wire Y;
 
-    
 
+    // Instantiate DUT
+  MUX_4_1 uut (.I(I), .S(S), .Y(Y));
     initial begin
-        A = 0; B = 0; C = 0; D = 0; S0 = 0; S1 = 0;
+        $monitor("Time=%0t | I=%b | S=%b | Y=%b", $time, I, S, Y);
 
-      
-        #10 $stop;
-    end
+        I = 4'b1010;
+        S = 2'b00; #10;
+        S = 2'b01; #10;
+        S = 2'b10; #10;
+        S = 2'b11; #10;
 
-   
+        I = 4'b0010;
+        S = 2'b00; #10;
+        S = 2'b01; #10;
+        S = 2'b10; #10;
+        S = 2'b11; #10;
+
+        $finish;
     end
 endmodule
 ```
 ## Simulated Output Structural Modelling
+<img width="1916" height="1078" alt="image" src="https://github.com/user-attachments/assets/4392a8cc-68c3-4bad-b07a-f6b4b73b26ba" />
 
-_______ Here Paste the Simulated output  ___________
 
 ---
 ### CONCLUSION
